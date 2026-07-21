@@ -17,15 +17,19 @@ fun main() {
 
     document.addEventListener("click", { e -> onClick(e) })
     document.addEventListener("input", { e -> onInput(e) })
-
-    // (Re)wire live SSE streams on load and after every htmx swap.
-    val ready: (Event) -> Unit = { initSse(); scrollChatToBottom() }
     document.addEventListener("DOMContentLoaded", { initSse() })
-    document.body?.addEventListener("htmx:afterSwap", ready)
+    document.body?.addEventListener("htmx:afterSwap", { initSse(); scrollChatToBottom() })
+
     // In case the bundle runs after DOMContentLoaded already fired.
     initSse()
-
     initKeyboardAvoidance()
+}
+
+private inline fun forEachEl(selector: String, action: (Element) -> Unit) {
+    val nodes = document.querySelectorAll(selector)
+    for (i in 0 until nodes.length) {
+        (nodes.item(i) as? Element)?.let(action)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -44,8 +48,7 @@ private fun onClick(e: Event) {
         if (!insideMenu && !isToggle) menu.classList.remove("open")
     }
 
-    val action = actionEl?.getAttribute("data-action") ?: return
-    when (action) {
+    when (actionEl?.getAttribute("data-action")) {
         "open-drawer" -> open("drawer-layer")
         "close-drawer" -> close("drawer-layer")
         "open-settings" -> { close("drawer-layer"); open("settings-layer") }
@@ -70,22 +73,14 @@ private fun clearOverlay() { document.getElementById("overlay-root")?.let { it.i
 
 private fun switchView(view: String?) {
     if (view == null) return
-    document.querySelectorAll(".viewtab").asList().forEach {
-        (it as Element).classList.toggle("active", it.getAttribute("data-view") == view)
-    }
-    document.querySelectorAll(".view").asList().forEach {
-        (it as Element).classList.toggle("active", it.getAttribute("data-view") == view)
-    }
+    forEachEl(".viewtab") { it.classList.toggle("active", it.getAttribute("data-view") == view) }
+    forEachEl(".view") { it.classList.toggle("active", it.getAttribute("data-view") == view) }
 }
 
 private fun selectTab(tab: String?) {
     if (tab == null) return
-    document.querySelectorAll(".sheet-tab").asList().forEach {
-        (it as Element).classList.toggle("active", it.getAttribute("data-tab") == tab)
-    }
-    document.querySelectorAll(".settings-pane").asList().forEach {
-        (it as Element).classList.toggle("active", it.getAttribute("data-pane") == tab)
-    }
+    forEachEl(".sheet-tab") { it.classList.toggle("active", it.getAttribute("data-tab") == tab) }
+    forEachEl(".settings-pane") { it.classList.toggle("active", it.getAttribute("data-pane") == tab) }
 }
 
 private fun stepThreads(delta: Int) {
@@ -98,7 +93,7 @@ private fun stepThreads(delta: Int) {
 }
 
 private fun setCtx(el: Element) {
-    document.querySelectorAll(".ctx-opt").asList().forEach { (it as Element).classList.remove("active") }
+    forEachEl(".ctx-opt") { it.classList.remove("active") }
     el.classList.add("active")
 }
 
@@ -107,7 +102,7 @@ private fun install(el: Element) {
     actions.innerHTML =
         "<div class=\"btn-installing\"><span class=\"spinner\"></span>Installing…</div>" +
         "<button class=\"btn-secondary\" type=\"button\">Open dir</button>"
-    window.setTimeout({
+    window.asDynamic().setTimeout({
         actions.innerHTML =
             "<div class=\"btn-installed\">✓ Installed</div>" +
             "<button class=\"btn-secondary\" type=\"button\">Open dir</button>"
@@ -137,11 +132,9 @@ private fun onInput(e: Event) {
 // ---------------------------------------------------------------------------
 
 private fun initSse() {
-    val nodes = document.querySelectorAll("[data-sse]:not([data-sse-live])").asList()
-    for (node in nodes) {
-        val el = node as HTMLElement
+    forEachEl("[data-sse]:not([data-sse-live])") { el ->
         el.setAttribute("data-sse-live", "1")
-        val url = el.getAttribute("data-sse") ?: continue
+        val url = el.getAttribute("data-sse") ?: return@forEachEl
         val eventName = el.getAttribute("data-sse-event") ?: "message"
 
         val source = js("new EventSource(url)")
@@ -154,7 +147,7 @@ private fun initSse() {
 }
 
 private fun scrollChatToBottom() {
-    val ws = document.querySelector(".workspace") as? HTMLElement ?: return
+    val ws = document.querySelector(".workspace") ?: return
     ws.scrollTop = ws.scrollHeight.toDouble()
 }
 
@@ -166,8 +159,7 @@ private fun initKeyboardAvoidance() {
     val vv = window.asDynamic().visualViewport ?: return
     vv.addEventListener("resize", {
         if (window.innerWidth < 520) {
-            val app = document.querySelector(".app") as? HTMLElement
-            app?.style?.height = "${vv.height}px"
+            (document.querySelector(".app") as? HTMLElement)?.style?.height = "${vv.height}px"
         }
     })
 }

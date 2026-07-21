@@ -3,4 +3,4 @@ ktor:
     port: 8080
   application:
     modules:
-      - com.musa.RoutingKt.configureRouting
+      - com.musa.atomcode.ApplicationKt.module

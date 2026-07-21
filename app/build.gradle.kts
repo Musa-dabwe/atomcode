@@ -1,6 +1,6 @@
 plugins {
+    // AGP 9+ ships built-in Kotlin support, so the kotlin-android plugin is not applied here.
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -24,6 +24,19 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // Ktor pulls in many jars that collide on duplicate META-INF entries; drop the noise.
+    packaging {
+        resources.excludes += setOf(
+            "META-INF/INDEX.LIST",
+            "META-INF/DEPENDENCIES",
+            "META-INF/LICENSE*",
+            "META-INF/NOTICE*",
+            "META-INF/*.kotlin_module",
+            "META-INF/versions/**",
+            "META-INF/{AL2.0,LGPL2.1}",
+        )
     }
 }
 

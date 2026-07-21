@@ -1,5 +1,6 @@
 package com.musa.atomcode
 
+import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
@@ -18,6 +19,8 @@ import io.ktor.server.sessions.set
 import io.ktor.server.sse.sse
 import kotlinx.coroutines.flow.collect
 import kotlinx.html.FlowContent
+import kotlinx.html.div
+import kotlinx.html.id
 
 /** Resolves (or lazily creates) the caller's session and keeps the cookie in sync. */
 fun ApplicationCall.currentSession(): Session {
@@ -151,7 +154,7 @@ fun escapeHtml(s: String): String = buildString {
 
 /** Out-of-band swap that empties the overlay layer (dismisses the approval sheet). */
 private fun FlowContent.clearOverlayOob() {
-    kotlinx.html.div {
+    div {
         id = "overlay-root"
         attributes["hx-swap-oob"] = "innerHTML"
     }

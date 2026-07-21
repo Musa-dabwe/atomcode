@@ -2,6 +2,7 @@ package com.musa.atomcode
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.sessions.SessionSerializer
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.cookie
 import io.ktor.server.sse.SSE
@@ -19,7 +20,13 @@ val terminalService: TerminalService = StubTerminalService()
  */
 fun Application.module() {
     install(Sessions) {
-        cookie<UserSession>("ATOM_SESSION")
+        cookie<UserSession>("ATOM_SESSION") {
+            // The session payload is just an id, so avoid the kotlinx.serialization dependency.
+            serializer = object : SessionSerializer<UserSession> {
+                override fun serialize(session: UserSession): String = session.id
+                override fun deserialize(text: String): UserSession = UserSession(text)
+            }
+        }
     }
     install(SSE)
     configureRouting()
