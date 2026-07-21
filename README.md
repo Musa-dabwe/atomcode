@@ -40,3 +40,18 @@ Requires JDK 17. The Android module needs an Android SDK; point `local.propertie
 ./gradlew :core:test           # backend tests (routes, chat fragment, SSE, exec-mode)
 ./gradlew :app:assembleDebug   # build the Android APK (WebView host + embedded server)
 ```
+
+### Building where Node.js can't run (e.g. an on-device Android IDE)
+
+The `:web` Kotlin/JS bundle needs a Node.js binary the **build host** can execute. Gradle
+downloads a desktop `linux-arm64` Node, which cannot run inside an Android app sandbox
+(`kotlinNpmInstall` fails with *"A problem occurred starting process ... node"*). On such
+hosts, skip the web bundle:
+
+```bash
+./gradlew :app:assembleDebug -Patom.skipWeb=true
+```
+
+or add `atom.skipWeb=true` to `gradle.properties`. The APK then serves the server-rendered
+UI without the `/web.js` interaction layer (drawer/HTMX enhancements degrade), but it builds
+and launches. Build on a desktop machine for the full bundle.

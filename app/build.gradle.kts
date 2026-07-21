@@ -47,5 +47,8 @@ kotlin {
 dependencies {
     implementation(project(":core"))
     implementation(ktorLibs.server.cio)
-    implementation(libs.logback.classic)
+    // logback-classic is JVM-only and blows up when SLF4J initializes it on Android, which
+    // kills the process before the UI appears. Route SLF4J through java.util.logging instead;
+    // Android forwards j.u.l records to logcat.
+    implementation(libs.slf4j.jdk14)
 }
